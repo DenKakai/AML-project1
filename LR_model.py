@@ -57,7 +57,6 @@ class LR:
                     self.bias -= self.learning_rate * db
                 
                 if loglikelihood:
-                   print(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
                    loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
 
             if loglikelihood:

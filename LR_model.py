@@ -28,7 +28,10 @@ class LR:
         self.bias = None
         self.interaction_model = interaction_model
 
-    def fit(self, X, y, optimization_algorithm='SGD', batch_size=1):
+    def fit(self, X, y, optimization_algorithm='SGD', batch_size=1, loglikelihood=False):
+        if loglikelihood:
+            loglikelihood_result = []
+
         if self.interaction_model:
             X = add_data_interaction(X)
         n_samples, n_features = X.shape
@@ -52,7 +55,14 @@ class LR:
 
                     self.weights -= self.learning_rate * dw
                     self.bias -= self.learning_rate * db
+                
+                if loglikelihood:
+                   print(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
 
+            if loglikelihood:
+                return loglikelihood_result
+        
         if optimization_algorithm == 'IWLS':
             X_batched = batch_data(X, batch_size)
             y_batched = batch_data(y, batch_size)
@@ -98,6 +108,12 @@ class LR:
                     # Update weights
                     self.weights += dw[:-1]
                     self.bias += dw[-1]
+
+                if loglikelihood:
+                    loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+            
+            if loglikelihood:
+                return loglikelihood_result
 
         if optimization_algorithm == 'ADAM':
             pass

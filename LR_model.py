@@ -11,7 +11,7 @@ def batch_data(data, batch_size):
 
 def add_data_interaction(data):
     result = []
-    for row in data:
+    for row in np.array(data):
         new_row = row
         for i in range(len(row)):
             for j in range(i + 1, len(row)):

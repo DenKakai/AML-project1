@@ -42,7 +42,7 @@ class LR:
 
             # this min and // shenanigans is to not make smaller batch_size
             # have much more iterations compared to higher values
-            for i in range(self.n_iterations * min(batch_size, n_samples) // n_samples):
+            for _ in range(self.n_iterations * min(batch_size, n_samples) // n_samples):
                 for X_batch, y_batch in zip(X_batched, y_batched):
                     batch_n_samples = X_batch.shape[0]
                     y_pred = sigmoid(np.dot(X_batch, self.weights) + self.bias)
@@ -54,7 +54,50 @@ class LR:
                     self.bias -= self.learning_rate * db
 
         if optimization_algorithm == 'IWLS':
-            pass
+            X_batched = batch_data(X, batch_size)
+            y_batched = batch_data(y, batch_size)
+            
+            for _ in range(self.n_iterations * min(batch_size, n_samples) // n_samples):
+                for X_batch, y_batch in zip(X_batched, y_batched):
+                    y_pred = sigmoid(np.dot(X_batch, self.weights) + self.bias)
+
+                    X_batch = np.hstack([X_batch, np.ones([X_batch.shape[0],1])])
+                    # dw = np.hstack([self.weights, self.bias])
+                    # # approach 2
+                    # weights = np.diag(y_pred * (1-y_pred))
+                    # weights = np.sqrt(weights)
+                    # try:
+                    #     z = np.dot(dw.T, np.dot(X_batch.T, weights)) + np.dot(np.linalg.inv(weights), (y_batch - y_pred))
+
+                    # except:
+                        
+                    #     z = np.dot(dw.T, np.dot(X_batch.T, weights)) + np.dot(np.linalg.pinv(weights), (y_batch - y_pred))
+                    # try:
+
+                    #     dw = np.dot( np.linalg.inv( np.dot( np.dot( np.dot(X_batch.T, weights) , weights), X_batch) ), np.dot(np.dot(X_batch.T, weights), z))
+                    # except:
+                    #     dw = np.dot( np.linalg.pinv( np.dot( np.dot( np.dot(X_batch.T, weights) , weights), X_batch) ), np.dot(np.dot(X_batch.T, weights), z))
+                    # self.weights = dw[:-1]
+                    # self.bias = dw[-1]
+                    
+
+                    # CHAT version
+                    weights = y_pred * (1 - y_pred)
+                    X_weighted = X_batch * np.sqrt(weights[:, np.newaxis])
+        
+                    # Compute weighted target vector
+                    y_weighted = y_batch - y_pred
+                    
+                    # Solve linear equations to update weights
+                    try:
+                        dw = np.linalg.solve(np.dot(X_weighted.T, X_weighted), np.dot(X_weighted.T, y_weighted))
+                    except np.linalg.LinAlgError:
+                        # Apply Tikhonov regularization and solve the regularized linear system
+                        dw = np.linalg.solve(np.dot(X_weighted.T, X_weighted) + 0.01 * np.eye(X_weighted.shape[1]), np.dot(X_weighted.T, y_weighted))
+                    
+                    # Update weights
+                    self.weights += dw[:-1]
+                    self.bias += dw[-1]
 
         if optimization_algorithm == 'ADAM':
             pass

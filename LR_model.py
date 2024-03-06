@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import mean_absolute_error
 
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
@@ -23,14 +24,15 @@ def add_data_interaction(data):
 
 
 class LR:
-    def __init__(self, learning_rate=0.01, n_iterations=10000, interaction_model=False):
+    def __init__(self, learning_rate=0.01, n_iterations=10000, interaction_model=False, tol = 1e-4):
         self.learning_rate = learning_rate
         self.n_iterations = n_iterations
         self.weights = None
         self.bias = None
         self.interaction_model = interaction_model
+        self.tol = tol
 
-    def fit(self, X, y, optimization_algorithm='SGD', batch_size=1):
+    def fit(self, X, y, optimization_algorithm='SGD', batch_size=-1):
         if self.interaction_model:
             X = add_data_interaction(X)
         n_samples, n_features = X.shape
@@ -40,25 +42,44 @@ class LR:
 
         X_batched = batch_data(X, batch_size)
         y_batched = batch_data(y, batch_size)
+        # used for stop condition
+        previous_loss = self.calculate_loss(X, y)
+        n = 0
 
         if optimization_algorithm == 'SGD':
 
             # this min and // shenanigans is to not make smaller batch_size
             # have much more iterations compared to higher values
-            for _ in range(self.n_iterations):
+            for i in range(self.n_iterations):
                 for X_batch, y_batch in zip(X_batched, y_batched):
                     batch_n_samples = X_batch.shape[0]
                     y_pred = sigmoid(np.dot(X_batch, self.weights) + self.bias)
 
-                    dw = (1 / batch_n_samples) * np.dot(X_batch.T, (y_pred - y_batch))
-                    db = (1 / batch_n_samples) * np.sum(y_pred - y_batch)
+                    dw = np.dot(X_batch.T, (y_pred - y_batch)) * self.learning_rate # *(1 / batch_n_samples)
+                    db = np.sum(y_pred - y_batch) * self.learning_rate # *(1 / batch_n_samples)
 
-                    self.weights -= self.learning_rate * dw
-                    self.bias -= self.learning_rate * db
+                    self.weights -= dw
+                    self.bias -= db
+                    # this stop condition utilizes the MAE loss function
+                    current_loss = self.calculate_loss(X, y)
+    
+                    if self.stop_condition(previous_loss, current_loss):
+                        if n == 5:
+                            print(f"SGD stopping at iteration {i}")
+                            return
+                        else:
+                            n+=1
+                    previous_loss = current_loss
+                    n = 0
+
+                    # doesn't work badly, just a very primitive approach
+                    # if np.linalg.norm(dw) < self.tol:
+                    #     print(f"SGD stopping at iteration {i}")
+                    #     return
 
         if optimization_algorithm == 'IWLS':
             
-            for _ in range(self.n_iterations):
+            for i in range(self.n_iterations):
                 for X_batch, y_batch in zip(X_batched, y_batched):
                     y_pred = sigmoid(np.dot(X_batch, self.weights) + self.bias)
 
@@ -74,8 +95,24 @@ class LR:
                     except np.linalg.LinAlgError:
                         dw = np.linalg.solve(np.dot(X_weighted.T, X_weighted) + 0.1 * np.eye(X_weighted.shape[1]), np.dot(X_weighted.T, y_weighted))
                     
+                    dw *= self.learning_rate
                     self.weights += dw[:-1]
                     self.bias += dw[-1]
+
+                    current_loss = self.calculate_loss(X, y)
+    
+                    if self.stop_condition(previous_loss, current_loss):
+                        if n == 5:
+                            print(f"IWLS stopping at iteration {i}")
+                            return
+                        else:
+                            n+=1
+                    previous_loss = current_loss
+                    n = 0
+
+                    # if np.linalg.norm(dw) < self.tol:
+                    #     print(f"IWLS stopping at iteration {i}")
+                    #     return
 
 
         # if optimization_algorithm == 'IWLS2':
@@ -121,6 +158,21 @@ class LR:
                     self.weights -= update[:-1]
                     self.bias -= update[-1]
 
+                    current_loss = self.calculate_loss(X, y)
+    
+                    if self.stop_condition(previous_loss, current_loss):
+                        if n == 5:
+                            print(f"ADAM stopping at iteration {i}")
+                            return
+                        else:
+                            n+=1
+                    previous_loss = current_loss
+                    n = 0
+
+                    # if np.linalg.norm(update) < self.tol:
+                    #     print(f"ADAM stopping at iteration {t}")
+                    #     return
+
         # code for whole dataset gradient
         # for i in range(self.n_iterations):
         #     y_pred = sigmoid(np.dot(X, self.weights) + self.bias)
@@ -144,3 +196,11 @@ class LR:
         y_pred = sigmoid(np.dot(X, self.weights) + self.bias)
         
         return [0 if y < 0.5 else 1 for y in y_pred]
+    
+    def calculate_loss(self, X, y):
+        y_pred = self.predict(X)
+        return mean_absolute_error(y, y_pred)
+    
+    def stop_condition(self, prev_loss, loss):
+        loss_change = np.abs(prev_loss - loss)
+        return loss_change < self.tol

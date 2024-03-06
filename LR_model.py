@@ -32,7 +32,10 @@ class LR:
         self.interaction_model = interaction_model
         self.tol = tol
 
-    def fit(self, X, y, optimization_algorithm='SGD', batch_size=-1):
+    def fit(self, X, y, optimization_algorithm='SGD', batch_size=-1, loglikelihood=False):
+        if loglikelihood:
+            loglikelihood_result = []
+        
         if self.interaction_model:
             X = add_data_interaction(X)
         n_samples, n_features = X.shape
@@ -48,8 +51,6 @@ class LR:
 
         if optimization_algorithm == 'SGD':
 
-            # this min and // shenanigans is to not make smaller batch_size
-            # have much more iterations compared to higher values
             for i in range(self.n_iterations):
                 for X_batch, y_batch in zip(X_batched, y_batched):
                     batch_n_samples = X_batch.shape[0]
@@ -60,23 +61,28 @@ class LR:
 
                     self.weights -= dw
                     self.bias -= db
-                    # this stop condition utilizes the MAE loss function
-                    current_loss = self.calculate_loss(X, y)
-    
-                    if self.stop_condition(previous_loss, current_loss):
-                        if n == 5:
-                            print(f"SGD stopping at iteration {i}")
-                            return
-                        else:
-                            n+=1
+                # this stop condition utilizes the MAE loss function
+                current_loss = self.calculate_loss(X, y)
+
+                if self.stop_condition(previous_loss, current_loss):
+                    if n == 5:
+                        print(f"SGD stopping at iteration {i}")
+                        return
                     else:
-                        n = 0
-                    previous_loss = current_loss
+                        n+=1
+                else:
+                    n = 0
+                previous_loss = current_loss
 
                     # doesn't work badly, just a very primitive approach
                     # if np.linalg.norm(dw) < self.tol:
                     #     print(f"SGD stopping at iteration {i}")
                     #     return
+                if loglikelihood:
+                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+
+            if loglikelihood:
+                return loglikelihood_result
 
         if optimization_algorithm == 'IWLS':
             
@@ -100,21 +106,26 @@ class LR:
                     self.weights += dw[:-1]
                     self.bias += dw[-1]
 
-                    current_loss = self.calculate_loss(X, y)
-    
-                    if self.stop_condition(previous_loss, current_loss):
-                        if n == 5:
-                            print(f"IWLS stopping at iteration {i}")
-                            return
-                        else:
-                            n+=1
+                current_loss = self.calculate_loss(X, y)
+
+                if self.stop_condition(previous_loss, current_loss):
+                    if n == 5:
+                        print(f"IWLS stopping at iteration {i}")
+                        return
                     else:
-                        n = 0
-                    previous_loss = current_loss
+                        n+=1
+                else:
+                    n = 0
+                previous_loss = current_loss
 
                     # if np.linalg.norm(dw) < self.tol:
                     #     print(f"IWLS stopping at iteration {i}")
                     #     return
+                if loglikelihood:
+                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+
+            if loglikelihood:
+                return loglikelihood_result
 
 
         # if optimization_algorithm == 'IWLS2':
@@ -160,22 +171,27 @@ class LR:
                     self.weights -= update[:-1]
                     self.bias -= update[-1]
 
-                    current_loss = self.calculate_loss(X, y)
-    
-                    if self.stop_condition(previous_loss, current_loss):
-                        if n == 5:
-                            print(f"ADAM stopping at iteration {i}")
-                            return
-                        else:
-                            n+=1
-                    else:
-                        n = 0
+                current_loss = self.calculate_loss(X, y)
 
-                    previous_loss = current_loss
+                if self.stop_condition(previous_loss, current_loss):
+                    if n == 5:
+                        print(f"ADAM stopping at iteration {t}")
+                        return
+                    else:
+                        n+=1
+                else:
+                    n = 0
+
+                previous_loss = current_loss
 
                     # if np.linalg.norm(update) < self.tol:
                     #     print(f"ADAM stopping at iteration {t}")
                     #     return
+                if loglikelihood:
+                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+
+            if loglikelihood:
+                return loglikelihood_result
 
         # code for whole dataset gradient
         # for i in range(self.n_iterations):

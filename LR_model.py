@@ -69,8 +69,9 @@ class LR:
                             return
                         else:
                             n+=1
+                    else:
+                        n = 0
                     previous_loss = current_loss
-                    n = 0
 
                     # doesn't work badly, just a very primitive approach
                     # if np.linalg.norm(dw) < self.tol:
@@ -107,8 +108,9 @@ class LR:
                             return
                         else:
                             n+=1
+                    else:
+                        n = 0
                     previous_loss = current_loss
-                    n = 0
 
                     # if np.linalg.norm(dw) < self.tol:
                     #     print(f"IWLS stopping at iteration {i}")
@@ -147,7 +149,7 @@ class LR:
                     norm = n_samples if batch_size == -1 else batch_size
                     if batch_size == -1:
                         pass
-                    gradient = np.dot(X_batch.T, (y_pred - y_batch)) / norm # derivative of log-loss with respect to weights Log_loss = -1/n * sum_over_i (yi * log(pi) + (1 - yi) * log(1 - pi) ), pi = 1 / (1 + exp(-Beta * xi) ), stąd d/dBeta * Log_loss = 1/n * X.T * (y_pred - y)
+                    gradient = np.dot(X_batch.T, (y_pred - y_batch)) / norm # derivative of log-loss with respect to weights Log_loss = -1/n * sum_over_i (yi * log(pi) + (1 - yi) * log(1 - pi) ), pi = 1 / (1 + exp(-Beta * xi) ), therefore d/dBeta * Log_loss = 1/n * X.T * (y_pred - y)
                     m = beta1 * m + (1 - beta1) * gradient
                     v = beta2 * v + (1 - beta2) * (gradient ** 2)
 
@@ -166,8 +168,10 @@ class LR:
                             return
                         else:
                             n+=1
+                    else:
+                        n = 0
+
                     previous_loss = current_loss
-                    n = 0
 
                     # if np.linalg.norm(update) < self.tol:
                     #     print(f"ADAM stopping at iteration {t}")

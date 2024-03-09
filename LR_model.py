@@ -1,16 +1,22 @@
 import numpy as np
 from sklearn.metrics import mean_absolute_error
+from sklearn.utils import shuffle
 
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
-def batch_data(data, batch_size): 
+def batch_data(X, y, batch_size): 
     if batch_size == -1:
-        return [data]
-    result = []
-    for i in range(0, len(data), batch_size):  
-        result.append(data[i:i + batch_size])
-    return result
+        return [X], [y]
+    result_X = []
+    result_y = []
+    X_data = X[:]
+    y_data = y[:]
+    X_data, y_data = shuffle(X_data, y_data)
+    for i in range(0, len(y_data), batch_size):
+        result_X.append(X_data[i:i + batch_size])
+        result_y.append(y_data[i:i + batch_size])
+    return result_X, result_y
 
 def add_data_interaction(data):
     result = []
@@ -43,8 +49,7 @@ class LR:
         self.weights = np.zeros(n_features)
         self.bias = 0
 
-        X_batched = batch_data(X, batch_size)
-        y_batched = batch_data(y, batch_size)
+        X_batched, y_batched = batch_data(X, y, batch_size)
         # used for stop condition
         previous_loss = self.calculate_loss(X, y)
         n = 0

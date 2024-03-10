@@ -72,6 +72,8 @@ class LR:
                 if self.stop_condition(previous_loss, current_loss):
                     if n == 5:
                         print(f"SGD stopping at iteration {i}")
+                        if loglikelihood:
+                            return loglikelihood_result
                         return
                     else:
                         n+=1
@@ -84,7 +86,7 @@ class LR:
                     #     print(f"SGD stopping at iteration {i}")
                     #     return
                 if loglikelihood:
-                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+                   loglikelihood_result.append(np.sum([np.log(max(proba, 0.05)) if y_class==1 else np.log(max(1-proba, 0.05)) for proba, y_class in zip(self.predict_proba(X), y)]))
 
             if loglikelihood:
                 return loglikelihood_result
@@ -116,6 +118,8 @@ class LR:
                 if self.stop_condition(previous_loss, current_loss):
                     if n == 5:
                         print(f"IWLS stopping at iteration {i}")
+                        if loglikelihood:
+                            return loglikelihood_result
                         return
                     else:
                         n+=1
@@ -127,7 +131,7 @@ class LR:
                     #     print(f"IWLS stopping at iteration {i}")
                     #     return
                 if loglikelihood:
-                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+                   loglikelihood_result.append(np.sum([np.log(max(proba, 0.05)) if y_class==1 else np.log(max(1-proba, 0.05)) for proba, y_class in zip(self.predict_proba(X), y)]))
 
             if loglikelihood:
                 return loglikelihood_result
@@ -181,6 +185,8 @@ class LR:
                 if self.stop_condition(previous_loss, current_loss):
                     if n == 5:
                         print(f"ADAM stopping at iteration {t}")
+                        if loglikelihood:
+                            return loglikelihood_result
                         return
                     else:
                         n+=1
@@ -193,7 +199,7 @@ class LR:
                     #     print(f"ADAM stopping at iteration {t}")
                     #     return
                 if loglikelihood:
-                   loglikelihood_result.append(np.sum([np.log(proba) if y_class==1 else np.log(1-proba) for proba, y_class in zip(self.predict_proba(X), y)]))
+                   loglikelihood_result.append(np.sum([np.log(max(proba, 0.05)) if y_class==1 else np.log(max(1-proba, 0.05)) for proba, y_class in zip(self.predict_proba(X), y)]))
 
             if loglikelihood:
                 return loglikelihood_result

@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 from sklearn.utils import shuffle
+from copy import deepcopy
 
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
@@ -214,16 +215,18 @@ class LR:
         #     self.weights -= self.learning_rate * dw
         #     self.bias -= self.learning_rate * db
 
-    def predict_proba(self, X):
-        if self.interaction_model:
-            X = add_data_interaction(X)
+    def predict_proba(self, X_input, interaction_model=False):
+        X = deepcopy(X_input)
+        if interaction_model:
+            X = add_data_interaction(X_input)
         y_pred = sigmoid(np.dot(X, self.weights) + self.bias)
 
         return y_pred
     
-    def predict(self, X):
-        if self.interaction_model:
-            X = add_data_interaction(X)
+    def predict(self, X_input, interaction_model=False):
+        X = deepcopy(X_input)
+        if interaction_model:
+            X = add_data_interaction(X_input)
         y_pred = sigmoid(np.dot(X, self.weights) + self.bias)
         
         return [0 if y < 0.5 else 1 for y in y_pred]

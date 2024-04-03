@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, balanced_accuracy_score
 from sklearn.utils import shuffle
 from copy import deepcopy
 
@@ -71,8 +71,8 @@ class LR:
                 current_loss = self.calculate_loss(X, y)
 
                 if self.stop_condition(previous_loss, current_loss):
-                    if n == 5:
-                        print(f"SGD stopping at iteration {i}")
+                    if n == 10:
+                        # print(f"SGD stopping at iteration {i}")
                         if loglikelihood:
                             return loglikelihood_result
                         return
@@ -117,8 +117,8 @@ class LR:
                 current_loss = self.calculate_loss(X, y)
 
                 if self.stop_condition(previous_loss, current_loss):
-                    if n == 5:
-                        print(f"IWLS stopping at iteration {i}")
+                    if n == 10:
+                        # print(f"IWLS stopping at iteration {i}")
                         if loglikelihood:
                             return loglikelihood_result
                         return
@@ -184,8 +184,8 @@ class LR:
                 current_loss = self.calculate_loss(X, y)
 
                 if self.stop_condition(previous_loss, current_loss):
-                    if n == 5:
-                        print(f"ADAM stopping at iteration {t}")
+                    if n == 10:
+                        # print(f"ADAM stopping at iteration {t}")
                         if loglikelihood:
                             return loglikelihood_result
                         return
@@ -236,5 +236,5 @@ class LR:
         return mean_absolute_error(y, y_pred)
     
     def stop_condition(self, prev_loss, loss):
-        loss_change = np.abs(prev_loss - loss)
+        loss_change = loss - prev_loss
         return loss_change < self.tol
